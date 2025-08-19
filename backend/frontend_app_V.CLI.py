@@ -75,7 +75,7 @@ def validate_inputs(invoice):
         "numero_factura": "Número de Factura", "moneda_factura": "Moneda de Factura",
         "fecha_emision_factura": "Fecha de Emisión",
         "tasa_de_avance": "Tasa de Avance",
-        "interes_mensual": "Interés Mensual", "comision_de_estructuracion": "Comisión de Estructuración",
+        "interes_mensual": "Interés Mensual",
         "plazo_credito_dias": "Plazo de Crédito (días)", "fecha_desembolso_factoring": "Fecha de Desembolso",
     }
     is_valid = True
@@ -167,9 +167,6 @@ def propagate_commission_changes():
         first_invoice = st.session_state.invoices_data[0]
         first_invoice['tasa_de_avance'] = st.session_state.get(f"tasa_de_avance_0", first_invoice['tasa_de_avance'])
         first_invoice['interes_mensual'] = st.session_state.get(f"interes_mensual_0", first_invoice['interes_mensual'])
-        first_invoice['comision_de_estructuracion'] = st.session_state.get(f"comision_de_estructuracion_0", first_invoice['comision_de_estructuracion'])
-        first_invoice['comision_minima_pen'] = st.session_state.get(f"comision_minima_pen_0", first_invoice['comision_minima_pen'])
-        first_invoice['comision_minima_usd'] = st.session_state.get(f"comision_minima_usd_0", first_invoice['comision_minima_usd'])
         first_invoice['comision_afiliacion_pen'] = st.session_state.get(f"comision_afiliacion_pen_0", first_invoice['comision_afiliacion_pen'])
         first_invoice['comision_afiliacion_usd'] = st.session_state.get(f"comision_afiliacion_usd_0", first_invoice['comision_afiliacion_usd'])
 
@@ -178,9 +175,6 @@ def propagate_commission_changes():
             invoice = st.session_state.invoices_data[i]
             invoice['tasa_de_avance'] = first_invoice['tasa_de_avance']
             invoice['interes_mensual'] = first_invoice['interes_mensual']
-            invoice['comision_de_estructuracion'] = first_invoice['comision_de_estructuracion']
-            invoice['comision_minima_pen'] = first_invoice['comision_minima_pen']
-            invoice['comision_minima_usd'] = first_invoice['comision_minima_usd']
             invoice['comision_afiliacion_pen'] = first_invoice['comision_afiliacion_pen']
             invoice['comision_afiliacion_usd'] = first_invoice['comision_afiliacion_usd']
 
@@ -200,14 +194,18 @@ if 'aplicar_comision_afiliacion_global' not in st.session_state: st.session_stat
 if 'comision_afiliacion_pen_global' not in st.session_state: st.session_state.comision_afiliacion_pen_global = 200.0
 if 'comision_afiliacion_usd_global' not in st.session_state: st.session_state.comision_afiliacion_usd_global = 50.0
 
+# Global settings for structuring commission
+if 'aplicar_comision_estructuracion_global' not in st.session_state: st.session_state.aplicar_comision_estructuracion_global = False
+if 'comision_estructuracion_pct_global' not in st.session_state: st.session_state.comision_estructuracion_pct_global = 0.5
+if 'comision_estructuracion_min_pen_global' not in st.session_state: st.session_state.comision_estructuracion_min_pen_global = 10.0
+if 'comision_estructuracion_min_usd_global' not in st.session_state: st.session_state.comision_estructuracion_min_usd_global = 3.0
+
+
 # Default values for new invoices (these will be copied into each invoice's dict)
 if 'default_comision_afiliacion_pen' not in st.session_state: st.session_state.default_comision_afiliacion_pen = 200.0
 if 'default_comision_afiliacion_usd' not in st.session_state: st.session_state.default_comision_afiliacion_usd = 50.0
 if 'default_tasa_de_avance' not in st.session_state: st.session_state.default_tasa_de_avance = 98.0
 if 'default_interes_mensual' not in st.session_state: st.session_state.default_interes_mensual = 1.25
-if 'default_comision_de_estructuracion' not in st.session_state: st.session_state.default_comision_de_estructuracion = 0.5
-if 'default_comision_minima_pen' not in st.session_state: st.session_state.default_comision_minima_pen = 10.0
-if 'default_comision_minima_usd' not in st.session_state: st.session_state.default_comision_minima_usd = 3.0
 
 # --- UI: Título y CSS ---
 try:
@@ -282,9 +280,6 @@ with st.expander("", expanded=True):
                                 'fecha_desembolso_factoring': '',
                                 'tasa_de_avance': st.session_state.default_tasa_de_avance,
                                 'interes_mensual': st.session_state.default_interes_mensual,
-                                'comision_de_estructuracion': st.session_state.default_comision_de_estructuracion,
-                                'comision_minima_pen': st.session_state.default_comision_minima_pen,
-                                'comision_minima_usd': st.session_state.default_comision_minima_usd,
                                 'comision_afiliacion_pen': st.session_state.default_comision_afiliacion_pen,
                                 'comision_afiliacion_usd': st.session_state.default_comision_afiliacion_usd,
                                 'aplicar_comision_afiliacion': False,
@@ -344,6 +339,45 @@ if st.session_state.invoices_data:
             key='comision_afiliacion_usd_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_afiliacion_global', False)
+        )
+
+# --- UI: Global Structuring Commission ---
+if st.session_state.invoices_data:
+    st.write("#### Comisión de Estructuración (Aplicable a todas las facturas)")
+    
+    col1, col2, col3, col4 = st.columns([1.5, 1, 1, 1])
+    with col1:
+        st.checkbox(
+            "Aplicar Comisión de Estructuración", 
+            key='aplicar_comision_estructuracion_global',
+            help="Si se marca, la comisión de estructuración se calculará sobre el capital total y se dividirá entre todas las facturas cargadas."
+        )
+    with col2:
+        st.number_input(
+            "Comisión de Estructuración (%)",
+            min_value=0.0,
+            value=st.session_state.comision_estructuracion_pct_global,
+            key='comision_estructuracion_pct_global',
+            format="%.2f",
+            disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
+        )
+    with col3:
+        st.number_input(
+            "Comisión Mínima (PEN)",
+            min_value=0.0,
+            value=st.session_state.comision_estructuracion_min_pen_global,
+            key='comision_estructuracion_min_pen_global',
+            format="%.2f",
+            disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
+        )
+    with col4:
+        st.number_input(
+            "Comisión Mínima (USD)",
+            min_value=0.0,
+            value=st.session_state.comision_estructuracion_min_usd_global,
+            key='comision_estructuracion_min_usd_global',
+            format="%.2f",
+            disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
         )
 
 # --- UI: Formulario Principal ---
@@ -491,17 +525,11 @@ if st.session_state.invoices_data:
             # Determine if fields should be disabled (i.e., if it's not the first invoice and conditions are fixed)
             is_disabled = idx > 0 and st.session_state.fijar_condiciones
 
-            col_tasa_avance, col_interes_mensual, col_comision_estructuracion, col_comision_min_pen, col_comision_min_usd = st.columns([0.8, 0.8, 1.4, 1, 1])
+            col_tasa_avance, col_interes_mensual = st.columns(2)
             with col_tasa_avance:
                 invoice['tasa_de_avance'] = st.number_input("Tasa de Avance (%)", min_value=0.0, value=invoice.get('tasa_de_avance', st.session_state.default_tasa_de_avance), format="%.2f", key=f"tasa_de_avance_{idx}", label_visibility="visible", on_change=propagate_commission_changes, disabled=is_disabled)
             with col_interes_mensual:
                 invoice['interes_mensual'] = st.number_input("Interés Mensual (%)", min_value=0.0, value=invoice.get('interes_mensual', st.session_state.default_interes_mensual), format="%.2f", key=f"interes_mensual_{idx}", label_visibility="visible", on_change=propagate_commission_changes, disabled=is_disabled)
-            with col_comision_estructuracion:
-                invoice['comision_de_estructuracion'] = st.number_input("Comisión de Estructuración (%)", min_value=0.0, value=invoice.get('comision_de_estructuracion', st.session_state.default_comision_de_estructuracion), format="%.2f", key=f"comision_de_estructuracion_{idx}", label_visibility="visible", on_change=propagate_commission_changes, disabled=is_disabled)
-            with col_comision_min_pen:
-                invoice['comision_minima_pen'] = st.number_input("Comisión Mínima (PEN)", min_value=0.0, value=invoice.get('comision_minima_pen', st.session_state.default_comision_minima_pen), format="%.2f", key=f"comision_minima_pen_{idx}", label_visibility="visible", on_change=propagate_commission_changes, disabled=is_disabled)
-            with col_comision_min_usd:
-                invoice['comision_minima_usd'] = st.number_input("Comisión Mínima (USD)", min_value=0.0, value=invoice.get('comision_minima_usd', st.session_state.default_comision_minima_usd), format="%.2f", key=f"comision_minima_usd_{idx}", label_visibility="visible", on_change=propagate_commission_changes, disabled=is_disabled)
             
 
         # Checkbox for fixing conditions is placed after the main commission inputs
@@ -531,15 +559,24 @@ if st.session_state.invoices_data:
                         comision_pen_apportioned = st.session_state.get('comision_afiliacion_pen_global', 0.0) / num_invoices
                         comision_usd_apportioned = st.session_state.get('comision_afiliacion_usd_global', 0.0) / num_invoices
 
+                    # --- Logic for Apportioned Structuring Commission ---
+                    comision_estructuracion_pct = 0.0
+                    comision_min_pen_apportioned_struct = 0.0
+                    comision_min_usd_apportioned_struct = 0.0
+                    if st.session_state.get('aplicar_comision_estructuracion_global', False) and num_invoices > 0:
+                        comision_estructuracion_pct = st.session_state.comision_estructuracion_pct_global
+                        comision_min_pen_apportioned_struct = st.session_state.comision_estructuracion_min_pen_global / num_invoices
+                        comision_min_usd_apportioned_struct = st.session_state.comision_estructuracion_min_usd_global / num_invoices
+
                     api_data = {
                         "plazo_operacion": invoice['plazo_operacion_calculado'],
                         "mfn": invoice['monto_neto_factura'],
                         "tasa_avance": invoice['tasa_de_avance'] / 100,
                         "interes_mensual": invoice['interes_mensual'] / 100,
-                        "comision_estructuracion_pct": invoice['comision_de_estructuracion'] / 100,
+                        "comision_estructuracion_pct": comision_estructuracion_pct / 100,
                         "moneda_factura": invoice['moneda_factura'],
-                        "comision_min_pen": invoice['comision_minima_pen'],
-                        "comision_min_usd": invoice['comision_minima_usd'],
+                        "comision_min_pen": comision_min_pen_apportioned_struct,
+                        "comision_min_usd": comision_min_usd_apportioned_struct,
                         "igv_pct": 0.18,
                         "comision_afiliacion_valor": comision_pen_apportioned,
                         "comision_afiliacion_usd_valor": comision_usd_apportioned,
@@ -561,10 +598,10 @@ if st.session_state.invoices_data:
                                     "plazo_operacion": invoice['plazo_operacion_calculado'],
                                     "mfn": invoice['monto_neto_factura'],
                                     "interes_mensual": invoice['interes_mensual'] / 100,
-                                    "comision_estructuracion_pct": invoice['comision_de_estructuracion'] / 100,
+                                    "comision_estructuracion_pct": comision_estructuracion_pct / 100,
                                     "moneda_factura": invoice['moneda_factura'],
-                                    "comision_min_pen": invoice['comision_minima_pen'],
-                                    "comision_min_usd": invoice['comision_minima_usd'],
+                                    "comision_min_pen": comision_min_pen_apportioned_struct,
+                                    "comision_min_usd": comision_min_usd_apportioned_struct,
                                     "igv_pct": 0.18,
                                     "comision_afiliacion_valor": comision_pen_apportioned, # Uses the apportioned value from above
                                     "comision_afiliacion_usd_valor": comision_usd_apportioned, # Uses the apportioned value from above
@@ -647,7 +684,7 @@ if st.session_state.invoices_data:
                 lines.append(f"| Margen de Seguridad | {margen.get('monto', 0):,.2f} | {margen.get('porcentaje', 0):.2f}% | `Monto Neto - Capital` | `{monto_neto:,.2f} - {capital:,.2f} = {margen.get('monto', 0):,.2f}` |")
                 lines.append(f"| Capital | {capital:,.2f} | {((capital / monto_neto) * 100) if monto_neto else 0:.2f}% | `Monto Neto * (Tasa de Avance / 100)` | `{monto_neto:,.2f} * ({tasa_avance_pct:.2f} / 100) = {capital:,.2f}` |")
                 lines.append(f"| Intereses | {interes.get('monto', 0):,.2f} | {interes.get('porcentaje', 0):.2f}% | `Capital * ((1 + Tasa Diaria)^Plazo - 1)` | Tasa Diaria: `{invoice.get('interes_mensual', 0):.2f}% / 30 = {tasa_diaria_pct:.4f}%`, Plazo: `{calculos.get('plazo_operacion', 0)} días`. Cálculo: `{capital:,.2f} * ((1 + {tasa_diaria_pct/100:.6f})^{calculos.get('plazo_operacion', 0)} - 1) = {interes.get('monto', 0):,.2f}` |")
-                lines.append(f"| Comisión de Estructuración | {com_est.get('monto', 0):,.2f} | {com_est.get('porcentaje', 0):.2f}% | `MAX(Capital * %Comisión, Mínima)` | Base: `{capital:,.2f} * ({invoice.get('comision_de_estructuracion',0):.2f} / 100) = {capital * (invoice.get('comision_de_estructuracion',0)/100):.2f}`, Mín: `{invoice.get('comision_minima_pen',0) if moneda == 'PEN' else invoice.get('comision_minima_usd',0):.2f}`. Resultado: `{com_est.get('monto', 0):,.2f}` |")
+                lines.append(f"| Comisión de Estructuración | {com_est.get('monto', 0):,.2f} | {com_est.get('porcentaje', 0):.2f}% | `MAX(Capital * %Comisión, Mínima Prorrateada)` | Base: `{capital:,.2f} * ({st.session_state.comision_estructuracion_pct_global:.2f} / 100) = {capital * (st.session_state.comision_estructuracion_pct_global/100):.2f}`, Mín Prorrateado: `{(st.session_state.comision_estructuracion_min_pen_global / len(st.session_state.invoices_data)) if moneda == 'PEN' else (st.session_state.comision_estructuracion_min_usd_global / len(st.session_state.invoices_data)):.2f}`. Resultado: `{com_est.get('monto', 0):,.2f}` |")
                 if com_afi.get('monto', 0) > 0:
                     lines.append(f"| Comisión de Afiliación | {com_afi.get('monto', 0):,.2f} | {com_afi.get('porcentaje', 0):.2f}% | `Valor Fijo (si aplica)` | Monto fijo para la moneda {moneda}. |")
                 
@@ -772,10 +809,16 @@ with col_paso3:
                 st.write("Generando PDF consolidado de perfiles con Jinja2...")
                 
                 invoices_to_print = []
+                num_invoices_for_pdf = len([inv for inv in st.session_state.invoices_data if inv.get('recalculate_result')])
                 for invoice in st.session_state.invoices_data:
                     if invoice.get('recalculate_result'):
                         # Add the new data point for the template
                         invoice['detraccion_monto'] = invoice.get('monto_total_factura', 0) - invoice.get('monto_neto_factura', 0)
+                        # Add global commission data to each invoice for the template
+                        invoice['comision_de_estructuracion_global'] = st.session_state.comision_estructuracion_pct_global
+                        invoice['comision_minima_pen_global'] = st.session_state.comision_estructuracion_min_pen_global
+                        invoice['comision_minima_usd_global'] = st.session_state.comision_estructuracion_min_usd_global
+                        invoice['num_invoices'] = num_invoices_for_pdf
                         invoices_to_print.append(invoice)
 
                 if invoices_to_print:
@@ -783,13 +826,20 @@ with col_paso3:
                     output_filename = f"perfiles_consolidados_{timestamp}.pdf"
                     output_filepath = os.path.join("C:/Users/rguti/Inandes.TECH/generated_pdfs", output_filename)
 
-                    invoices_json = json.dumps(invoices_to_print)
+                    temp_dir = "C:/Users/rguti/Inandes.TECH/backend/temp_files"
+                    if not os.path.exists(temp_dir):
+                        os.makedirs(temp_dir)
+                    
+                    temp_json_path = os.path.join(temp_dir, f"perfiles_data_{timestamp}.json")
+                    with open(temp_json_path, 'w', encoding='utf-8') as f:
+                        json.dump(invoices_to_print, f, ensure_ascii=False, indent=4)
+
                     print_date = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
                     command = [
                         "python", "C:/Users/rguti/Inandes.TECH/backend/html_generator_for_perfil.py",
                         f"--output_filepath={output_filepath}",
-                        f"--invoices_json={invoices_json}",
+                        f"--data_file={temp_json_path}",
                         f"--print_date={print_date}"
                     ]
                     try:
@@ -815,6 +865,9 @@ with col_paso3:
                         st.error(f"Error al generar el PDF consolidado: {e}\nSalida del error: {e.stderr}")
                     except FileNotFoundError:
                         st.error("Error: El script html_generator_for_perfil.py no fue encontrado.")
+                    finally:
+                        if os.path.exists(temp_json_path):
+                            os.remove(temp_json_path)
                 else:
                     st.warning("No hay perfiles calculados para imprimir.")
             else:
@@ -826,6 +879,7 @@ with col_paso3:
             st.write("Generando Reporte EFIDE...")
             
             invoices_to_print = []
+            num_invoices_for_pdf = len([inv for inv in st.session_state.invoices_data if inv.get('recalculate_result')])
             for invoice in st.session_state.invoices_data:
                 if invoice.get('recalculate_result'):
                     # Ensure detraccion_monto is present for the template
@@ -833,6 +887,11 @@ with col_paso3:
                     # --- FIX: Add contract and anexo numbers to each invoice ---
                     invoice['contract_number'] = st.session_state.get('contract_number', '')
                     invoice['anexo_number'] = st.session_state.get('anexo_number', '')
+                    # Add global commission data to each invoice for the template
+                    invoice['comision_de_estructuracion_global'] = st.session_state.comision_estructuracion_pct_global
+                    invoice['comision_minima_pen_global'] = st.session_state.comision_estructuracion_min_pen_global
+                    invoice['comision_minima_usd_global'] = st.session_state.comision_estructuracion_min_usd_global
+                    invoice['num_invoices'] = num_invoices_for_pdf
                     invoices_to_print.append(invoice)
 
             if invoices_to_print:
@@ -840,13 +899,20 @@ with col_paso3:
                 output_filename = f"reporte_efide_{timestamp}.pdf"
                 output_filepath = os.path.join("C:/Users/rguti/Inandes.TECH/generated_pdfs", output_filename)
 
-                invoices_json = json.dumps(invoices_to_print)
+                temp_dir = "C:/Users/rguti/Inandes.TECH/backend/temp_files"
+                if not os.path.exists(temp_dir):
+                    os.makedirs(temp_dir)
+
+                temp_json_path = os.path.join(temp_dir, f"efide_data_{timestamp}.json")
+                with open(temp_json_path, 'w', encoding='utf-8') as f:
+                    json.dump(invoices_to_print, f, ensure_ascii=False, indent=4)
+
                 print_date = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") # Format for the generator script
 
                 command = [
                     "python", "C:/Users/rguti/Inandes.TECH/backend/efide_report_generator.py",
                     f"--output_filepath={output_filepath}",
-                    f"--invoices_json={invoices_json}",
+                    f"--data_file={temp_json_path}",
                     f"--print_date={print_date}"
                 ]
                 try:
@@ -872,6 +938,9 @@ with col_paso3:
                     st.error(f"Error al generar el Reporte EFIDE: {e}\nSalida del error: {e.stderr}")
                 except FileNotFoundError:
                     st.error("Error: El script efide_report_generator.py no fue encontrado.")
+                finally:
+                    if os.path.exists(temp_json_path):
+                        os.remove(temp_json_path)
             else:
                 st.warning("No hay perfiles calculados para generar el Reporte EFIDE.")
         else:

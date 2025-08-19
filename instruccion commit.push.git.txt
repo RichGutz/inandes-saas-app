@@ -1,0 +1,19 @@
+# 1. Initialize the Git repository in the Inandes.TECH directory
+git init
+
+# 2. Stage all Python (.py) files
+git add *.py
+
+# 3. Create a .gitignore file to exclude the venv directory
+echo "backend/venv/" > .gitignore
+
+# 4. Unstage the venv directory, stage the .gitignore, and commit
+git rm -r --cached backend/venv
+git add .gitignore
+git commit -m "Initial commit of Python files, ignoring venv"
+
+# 5. Add the remote GitHub repository
+git remote add origin https://github.com/RichGutz/inandes-saas-app.git
+
+# 6. Push the local master branch to the remote origin
+git push -u origin master

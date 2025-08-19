@@ -1,0 +1,36 @@
+Actualmente el C:\Users\rguti\Inandes.TECH\backend\frontend_app_V.CLI.py genera pdf al apretar genera pdf usando reportlab
+
+Su output es terrible.
+
+Tengo dos archivos que usan JINJA y entregan el resultado deseado. 
+
+Quiero conectarlos.
+
+Analiza y haz un plan para conectarlos.Aca te los envio usalos de repositorio solamente.
+
+C:\Users\rguti\Adicionales.Inandes.HTML\html_generator_V5.py
+
+C:\Users\rguti\Adicionales.Inandes.HTML\templates\plantilla_factura_V5.html
+
+Los problemas que veo son de equivalencia de la data. En el frontend app v cli las variables de la data estan en INGLES mientras que en los generadores esta en español
+por ello hay un problema existencial
+
+Los generadores se han probado con data dummy y todo ok.
+
+Quiero que los generadores cambien el nombre de sus variables a las que entrega el app todo en ingles. Esto debido a que el front end app tiene 1000 LOC
+y los generadores tienen menos.
+
+Que las versiones que te señalo sean tu fuente de la verdad NO LAS SOBRE SOBREESCRIBAS. Crea otras y trabajemos sobre ellas.
+
+Un plan podria ser.
+
+1. Hacer que los generadores generen pdf con data dummy
+2. Una vez logrado, hacer los cambios de los nombres de las variables a los generadores
+3. Hacer que el boton GENERAR REPORTE PDF deje de apuntar a los REPORTLAB pasados y apunte a los generadores JINJA2
+4. Integrarlos.
+
+La clave esta en tocar CASI NADA del app pues funciona PERFECTAMENTE salvo generar los reportes.
+
+
+
+

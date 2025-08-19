@@ -1,0 +1,37 @@
+
+GYEME SAC
+G & M SOLUCIONES S.A.C.	FACTURA ELECTRONICA
+AV. LA MARINA 316 URB. BENJAMIN DOIG P 1 A 1 CDRA Y MEDIA DEL	RUC: 20477995030
+GRIFO OVALO PER	E001-1918
+LA PERLA - PROV. CONST. DEL CALLAO - PROV. CONST. DEL CALLAO
+
+
+Fecha de Emisión	: 28/05/2025		Forma de pago: Crédito Señor(es)	: PESQUERA DIAMANTE S.A.	GUIA DE REMISION REMITENTE	: EG07 856 RUC	: 20159473148	OTROS			5000259625
+CAL. AMADOR MERINO REYNA 307
+Dirección del Receptor de la factura : EDIFICIO NACIONAL PISO 12 Y 13
+LIMA LIMA SAN ISIDRO
+CAL. AMADOR MERINO REYNA 307
+Dirección del Cliente	: EDIFICIO NACIONAL PISO 12 Y 13 LIMA-LIMA-SAN ISIDRO
+Tipo de Moneda	: DOLAR AMERICANO
+Observación	: GV-2025-124Cantidad	Unidad Medida	Descripción	Valor Unitario	ICBPER
+
+3.00	UNIDAD	MICROFONO NAVGUARD NDM-02	190.00	0.00
+1.00	UNIDAD	INVERSOR CARGADOR MULTIPLUS 24/3000/70 230V VE	1838.18	0.00
+BUS SERIE HQ2315FEYXG
+
+Valor de Venta de Operaciones Gratuitas : $0.00
+
+
+SON: DOS MIL OCHOCIENTOS CUARENTA Y UNO Y 65/100 DOLAR AMERICANO
+Orden de Compra : 4500113575
+
+
+
+
+Información del crédito	:
+Monto neto pendiente de pago	:	$ 2,756.40
+Total de Cuotas	:	1
+
+Nº Cuota Fec. Venc.	Monto	Nº Cuota	Fec. Venc.	Monto	Nº Cuota  Fec. Venc.	Monto
+1	27/07/2025	2,756.40Información de la retención
+Base imponible de la	S/ 10372.03	Porcentaje de	3.00%	Monto de la	S/ 311.16 Retención:		retención:		retención:Esta es una representación impresa de la factura electrónica, generada en el Sistema de SUNAT. Puede verificarla utilizando su clave SOL.

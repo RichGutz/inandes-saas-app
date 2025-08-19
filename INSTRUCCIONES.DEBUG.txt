@@ -1,0 +1,35 @@
+1.  **Activar el entorno virtual:** `C:\Users\rguti\Inandes.TECH\backend\venv\Scripts\activate`
+2.  **Iniciar la aplicación Streamlit:** `streamlit run C:/Users/rguti/Inandes.TECH/backend/pdf_parser_app.py`
+
+STREAMLIT
+
+cd C:\Users\rguti\Inandes.TECH\backend
+C:\Users\rguti\Inandes.TECH\backend\venv\Scripts\activate
+streamlit run C:/Users/rguti/Inandes.TECH/backend/frontend_app.py
+streamlit run C:/Users/rguti/Inandes.TECH/backend/frontend_app_V.CLI.py
+
+"C:\ONE.GEEK\Scraper.Diario.FUSION\extractores\DIARIO.21.07.25\.venv\Scripts\activate.bat"
+
+UVICORN
+
+cd C:\Users\rguti\Inandes.TECH\backend
+C:\Users\rguti\Inandes.TECH\backend\venv\Scripts\activate
+uvicorn main:app --reload &
+
+NGROK
+
+Navegar hasta C:\
+
+C:\ngrok\ngrok.exe http 8501
+
+
+Exception in thread Thread-15 (_readerthread):Traceback (most recent call last):  File "C:\Program Files\Python312\Lib\threading.py", line 1073, in _bootstrap_inner    self.run()  File  │
+│    "C:\Program Files\Python312\Lib\threading.py", line 1010, in run    self._target(*self._args, **self._kwargs)  File "C:\Program Files\Python312\Lib\subprocess.py", line 1597, in         │
+│    _readerthread    buffer.append(fh.read())                  ^^^^^^^^^  File "<frozen codecs>", line 322, in decodeUnicodeDecodeError: 'utf-8' codec can't decode byte 0xf3 in position 18: │
+│     invalid continuation byte eso tengo en terminal
+
+El error UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf3 indica que html_generator_V6.py está imprimiendo caracteres no UTF-8 (probablemente ó en Windows-1252) que
+  frontend_app_V.CLI.py no puede decodificar. Para solucionarlo, cambiaré el parámetro encoding de subprocess.run en frontend_app_V.CLI.py a cp1252. Leeré el archivo y usaré replace para
+  aplicar el cambio.
+
+

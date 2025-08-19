@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Datos de Emisor/Deudor</title>
+    <style>
+        body { font-family: Helvetica, Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Datos de Emisor/Deudor</h1>
+    {% if data %}
+    <table>
+        {% for key, value in data.items() %}
+        <tr>
+            <td><b>{{ key }}:</b></td>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No se encontraron datos para el RUC especificado.</p>
+    {% endif %}
+
+    <h2>Parties Involved</h2>
+    <table style="width: 100%; margin-top: 30px;">
+        <tr>
+            <td>EMPRESA CLIENTE</td>
+            <td>DNI: (DNI)</td>
+            <td>INANDES FACTOR CAPITAL SAC</td>
+        </tr>
+        <tr>
+            <td>DNI: (DNI)</td>
+            <td>EL FACTOR</td>
+            <td>INANDES FACTOR CAPITAL SAC</td>
+        </tr>
+        <tr>
+            <td>DNI: (DNI)</td>
+            <td>ADMINISTRADOR</td>
+            <td>EL PAGADOR</td>
+        </tr>
+    </table>
+</body>
+</html>

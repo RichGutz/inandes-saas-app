@@ -1,0 +1,39 @@
+Resumen del Flujograma de Factoring
+
+**Inicio:** El proceso comienza con una "Operación de Factoring" que ya ha sido aprobada por el área de Riesgos.
+
+**Paso 1: Decisión de Operación Nueva**
+
+*   **Si es una operación nueva (cliente nuevo):**
+    1.  Se genera una carpeta para el cliente.
+    2.  Dentro de esa, se crean dos subcarpetas: "00 LEGAL" y "01 RIESGOS".
+    3.  Se generan los documentos: contrato, acuerdo de llenado de pagaré y el pagaré mismo.
+    4.  Se envían a firmar electrónicamente a través de la plataforma Keynua.
+    5.  Se pasa a la etapa de "Firma de documentos completa".
+
+*   **Si NO es una operación nueva (es un anexo de un cliente existente):**
+    1.  Se genera una nueva carpeta para el anexo.
+    2.  Se suben las facturas a una ubicación compartida.
+    3.  Se envía un correo al "obligado de pago" para confirmar dichas facturas.
+    4.  **Decisión:** ¿Contestaron?
+        *   **Si NO contestaron:** La operación queda en "stand by".
+        *   **Si SÍ contestaron:** Se prepara la proforma (en PDF) y la solicitud (en Word).
+
+**Paso 2: Verificación de Documentos y Facturas**
+
+*   **Decisión: ¿Firma de documentos completa?** (Aplica a los clientes nuevos)
+    *   **Si NO:** La operación queda en "stand by".
+    *   **Si SÍ:** Se registra la operación en los flujos "micro y macro".
+
+*   **Siguientes pasos para ambas ramas (clientes nuevos y existentes):**
+    1.  Se suben los archivos XML de las facturas a Cavali.
+    2.  **Decisión: ¿Hay conformidad de las facturas?**
+        *   **Si NO:** La operación queda en "stand by".
+        *   **Si SÍ:** Se emite una letra electrónica en la plataforma de Cavali y se guarda en la carpeta correspondiente.
+
+**Paso 3: Cierre de la Operación**
+
+1.  **Desembolsar:** Se realiza el pago al cliente.
+2.  **Facturar:** Se emite la factura final del servicio.
+
+**Nota Adicional:** Hay una instrucción general de "Siempre subir los documentos firmados a las carpetas".

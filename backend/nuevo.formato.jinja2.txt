@@ -1,0 +1,36 @@
+GEMINI,
+
+Modificaciones al reporte y a la calculadora por encargo del USER: C:\Users\rguti\Inandes.TECH\backend\frontend_app_V.CLI.py
+
+1. El interes depende de los dias que se calculan en base a varias fechas. La politica de la empresa es cargar al menos 15 dias de
+intereses compensatorio AUN si los dias calculados por la diferencia de fechas es MENOS DE 15. Es solo meter un MAX (dias calculados, 15) 
+a la formula de calculo del interes compuesto.
+
+2. Vamos a mover la comision de afiliacion . Ya no debe ser un boton y dox boxes que esten en todos los menus de cada factura, sino un checkbox y
+dos boxes unicos que esten exactamente debajo del menu seleccionar archivos y la factura 1. Colocarle separacion con lineas.
+
+3. El calculo se va variar un poco con respecto al calculo inicial. En vez de cargar la comision de afiliacion a una sola factura, se va a dividir entre
+el numero de archivos que se hayan cargado. 
+
+Necesito que analice lo que se debe cambiar, me presentes un plan , ejecutemos uno por uno los cambios SOLO CON MI AUTORIZACION. ENTENDIDO?
+
+==================================================================
+ACUSE DE RECIBO Y PLAN DE ACCION - GEMINI
+==================================================================
+
+He leído y comprendido las modificaciones solicitadas. A continuación, presento el plan de acción que seguiré, ejecutando cada paso solo después de recibir su autorización explícita.
+
+**Mi Entendimiento de los Requisitos:**
+
+1.  **Lógica del Cálculo de Intereses:** Se debe ajustar el cálculo de los intereses compensatorios para que siempre se utilice un mínimo de 15 días, incluso si la diferencia de fechas resulta en un número menor. La fórmula deberá aplicar `max(días_calculados, 15)`.
+
+2.  **Rediseño de la Interfaz de Usuario (UI):** La sección para la "comisión de afiliación" debe ser reubicada. Se eliminarán los controles repetidos en cada factura y se reemplazarán por una única sección con un checkbox y dos campos de entrada. Esta nueva sección se situará directamente debajo del cargador de archivos y antes de la primera factura, con una separación visual clara mediante líneas.
+
+3.  **Prorrateo de la Comisión:** La forma en que se aplica la comisión de afiliación cambiará. En lugar de asignarse a una sola factura, su costo se distribuirá equitativamente entre el número total de facturas cargadas en la sesión.
+
+**Próximos Pasos:**
+
+1.  **Análisis del Código Fuente:** Comenzaré por realizar un análisis detallado del archivo `C:\Users\rguti\Inandes.TECH\backend\frontend_app_V.CLI.py` para identificar las secciones de código exactas que necesitan ser modificadas.
+2.  **Propuesta de Cambios (Uno por Uno):** Presentaré cada cambio de forma individual para su revisión y aprobación antes de implementar cualquier modificación.
+
+Quedo a la espera de su confirmación para proceder con el primer paso del plan.

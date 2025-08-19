@@ -1,0 +1,41 @@
+flowchart TD
+    subgraph "Fase 1: Inicio y Clasificacion"
+        A[Start: Operacion de Factoring Aprobada] --> B{¿Es una operacion nueva?}
+    end
+
+    subgraph "Ruta A: Cliente Nuevo"
+        B --o|Si| C[Generar carpeta del cliente]
+        C --> D[Crear subcarpetas: LEGAL y RIESGOS]
+        D --> E[Generar Contrato, Pagare y Acuerdos]
+        E --> F[Enviar a firma electronica via Keynua]
+        F --> G{¿Firma de documentos completa?}
+        G --o|No| H_STANDBY[Operacion en Stand-By]
+        G --o|Si| I[Registrar operacion en flujos Micro/Macro]
+    end
+
+    subgraph "Ruta B: Cliente Existente Anexo"
+        B --o|No| J[Generar carpeta para el nuevo anexo]
+        J --> K[Subir facturas a carpeta compartida]
+        K --> L[Enviar correo de confirmacion al pagador]
+        L --> M{¿Pagador contesto?}
+        M --o|No| N_STANDBY[Operacion en Stand-By]
+        M --o|Si| O[Preparar Proforma PDF y Solicitud Word]
+    end
+
+    subgraph "Fase 2: Verificacion y Registro"
+        I --> P[Subir XML de facturas a Cavali]
+        O --> P
+        P --> Q{¿Hay conformidad de las facturas?}
+        Q --o|No| R_STANDBY[Operacion en Stand-By]
+    end
+
+    subgraph "Fase 3: Cierre"
+        Q --o|Si| S[Emitir y guardar Letra Electronica desde Cavali]
+        S --> T[Desembolsar]
+        T --> U[Facturar]
+        U --> V[End: Fin de la Operacion]
+    end
+
+    style H_STANDBY fill:#f9f,stroke:#333,stroke-width:2px
+    style N_STANDBY fill:#f9f,stroke:#333,stroke-width:2px
+    style R_STANDBY fill:#f9f,stroke:#333,stroke-width:2px

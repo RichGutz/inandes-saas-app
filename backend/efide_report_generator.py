@@ -121,15 +121,16 @@ def generate_efide_pdf(output_filepath, invoices_data_json, print_date_str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate an EFIDE-style PDF report from invoice data.")
     parser.add_argument("--output_filepath", required=True, help="The full path to save the output PDF file.")
-    parser.add_argument("--invoices_json", required=True, help="JSON string of a list of invoice data.")
+    parser.add_argument("--data_file", required=True, help="Path to the JSON file containing the list of invoice data.")
     parser.add_argument("--print_date", required=True, help="Date of printing in string format (YYYYMMDD_HHMMSS).")
     args = parser.parse_args()
 
     try:
-        generate_efide_pdf(args.output_filepath, args.invoices_json, args.print_date)
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}")
-        print(f"Received JSON string: {args.invoices_json}")
+        with open(args.data_file, 'r', encoding='utf-8') as f:
+            invoices_data_json = f.read()
+        generate_efide_pdf(args.output_filepath, invoices_data_json, args.print_date)
+    except FileNotFoundError:
+        print(f"Error: Data file not found at {args.data_file}")
         exit(1)
     except Exception as e:
         print(f"An error occurred during PDF generation: {e}")

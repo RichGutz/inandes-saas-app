@@ -36,15 +36,18 @@ def generate_pdf_from_invoices_data(output_filepath, invoices_data, print_date_s
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate a consolidated PDF profile from a list of invoices.")
     parser.add_argument("--output_filepath", required=True, help="The full path to save the output PDF file.")
-    parser.add_argument("--invoices_json", required=True, help="JSON string of a list of invoice data.")
+    parser.add_argument("--data_file", required=True, help="Path to the JSON file containing the list of invoice data.")
     parser.add_argument("--print_date", required=True, help="Date of printing in string format.")
     args = parser.parse_args()
 
     try:
-        invoices_data = json.loads(args.invoices_json)
+        with open(args.data_file, 'r', encoding='utf-8') as f:
+            invoices_data = json.load(f)
     except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}")
-        print(f"Received JSON string: {args.invoices_json}")
+        print(f"Error decoding JSON from file {args.data_file}: {e}")
+        exit(1)
+    except FileNotFoundError:
+        print(f"Error: Data file not found at {args.data_file}")
         exit(1)
 
     try:
