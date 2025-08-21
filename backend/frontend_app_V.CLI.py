@@ -737,10 +737,7 @@ if st.session_state.invoices_data:
                 invoice['interes_mensual'] = st.number_input("Interés Mensual (%)", min_value=0.0, value=invoice.get('interes_mensual', st.session_state.default_interes_mensual), format="%.2f", key=f"interes_mensual_{idx}", label_visibility="visible", on_change=propagate_commission_changes, disabled=is_disabled)
             
 
-        # Checkbox for fixing conditions is placed after the main commission inputs
-        # The "Fijar condiciones" checkbox is only shown for the first invoice
-        if idx == 0:
-            st.checkbox("Fijar condiciones", key='fijar_condiciones', on_change=propagate_commission_changes)
+        
 
         st.markdown("--- ")
 
