@@ -31,11 +31,9 @@ class CalcularDesembolsoRequest(BaseModel):
     tasa_avance: float
     interes_mensual: float
     comision_estructuracion_pct: float
-    moneda_factura: str
-    comision_min_pen: float
-    comision_min_usd: float
+    comision_minima_aplicable: float
     igv_pct: float
-    comision_afiliacion_valor: float = 0.0
+    comision_afiliacion_aplicable: float = 0.0
     aplicar_comision_afiliacion: bool = False
 
 class EncontrarTasaRequest(BaseModel):
@@ -43,12 +41,10 @@ class EncontrarTasaRequest(BaseModel):
     mfn: float
     interes_mensual: float
     comision_estructuracion_pct: float
-    moneda_factura: str
-    comision_min_pen: float
-    comision_min_usd: float
     igv_pct: float
     monto_objetivo: float
-    comision_afiliacion_valor: float = 0.0
+    comision_minima_aplicable: float
+    comision_afiliacion_aplicable: float = 0.0
     aplicar_comision_afiliacion: bool = False
 
 # --- Endpoints de la API ---

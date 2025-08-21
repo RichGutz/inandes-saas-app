@@ -208,13 +208,6 @@ def handle_global_interes_mensual_change():
             invoice['interes_mensual'] = global_interes
         st.toast("Interés mensual global aplicado a todas las facturas.")
 
-def handle_global_min_interest_days_change():
-    if st.session_state.get('aplicar_dias_interes_minimo_global'):
-        global_min_days = st.session_state.dias_interes_minimo_global
-        for invoice in st.session_state.invoices_data:
-            invoice['dias_minimos_interes_individual'] = global_min_days
-        st.toast("Días de interés mínimo global aplicado a todas las facturas.")
-
 # --- Inicialización del Session State ---
 
 # --- Inicialización del Session State ---
@@ -234,8 +227,8 @@ if 'comision_afiliacion_usd_global' not in st.session_state: st.session_state.co
 # Global settings for structuring commission
 if 'aplicar_comision_estructuracion_global' not in st.session_state: st.session_state.aplicar_comision_estructuracion_global = False
 if 'comision_estructuracion_pct_global' not in st.session_state: st.session_state.comision_estructuracion_pct_global = 0.5
-if 'comision_estructuracion_min_pen_global' not in st.session_state: st.session_state.comision_estructuracion_min_pen_global = 200.0
-if 'comision_estructuracion_min_usd_global' not in st.session_state: st.session_state.comision_estructuracion_min_usd_global = 50.0
+if 'comision_estructuracion_min_pen_global' not in st.session_state: st.session_state.comision_estructuracion_min_pen_global = 10.0
+if 'comision_estructuracion_min_usd_global' not in st.session_state: st.session_state.comision_estructuracion_min_usd_global = 3.0
 
 
 # Global settings for due date
@@ -245,10 +238,6 @@ if 'fecha_vencimiento_global' not in st.session_state: st.session_state.fecha_ve
 # Global settings for disbursement date
 if 'aplicar_fecha_desembolso_global' not in st.session_state: st.session_state.aplicar_fecha_desembolso_global = False
 if 'fecha_desembolso_global' not in st.session_state: st.session_state.fecha_desembolso_global = datetime.date.today()
-
-# Global settings for minimum interest days
-if 'aplicar_dias_interes_minimo_global' not in st.session_state: st.session_state.aplicar_dias_interes_minimo_global = False
-if 'dias_interes_minimo_global' not in st.session_state: st.session_state.dias_interes_minimo_global = 15
 
 
 # Default values for new invoices (these will be copied into each invoice's dict)
@@ -271,15 +260,17 @@ except FileNotFoundError:
     pass
 
 # Inject CSS for vertical alignment and right alignment for the last column
-st.markdown("""<style>
+st.markdown("""
+<style>
 [data-testid="stHorizontalBlock"] {
-    align-items: flex-start; /* Aligns items to the top */
+    align-items: center; /* Aligns items vertically in the center */
 }
 /* Target the image within the third column specifically for right alignment */
 [data-testid="stHorizontalBlock"] > div:nth-child(3) img {
     margin-left: auto; /* Pushes the image to the right */
 }
-</style>""", unsafe_allow_html=True)
+</style>
+""", unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns([0.25, 0.5, 0.25])
 with col1:
@@ -342,7 +333,6 @@ with st.expander("", expanded=True):
                                 'plazo_operacion_calculado': 0, # Will be calculated later
                                 'initial_calc_result': None,
                                 'recalculate_result': None,
-                                'dias_minimos_interes_individual': 15,
                             }
 
                             if invoice_entry['emisor_ruc']:
@@ -370,18 +360,16 @@ if st.session_state.invoices_data:
     st.markdown("---")
     st.subheader("Configuración Global")
 
-    col1, col2, col3 = st.columns(3)
-
-    # --- COLUMNA 1: COMISIONES ---
+    # --- Comisión de Estructuración ---
+    st.write("##### Comisión de Estructuración")
+    col1, col2, col3, col4 = st.columns([1.5, 1, 1, 1])
     with col1:
-        st.write("##### Comisiones Globales")
-        st.write("---")
-        st.write("**Com. de Estructuración**")
         st.checkbox(
             "Aplicar Comisión de Estructuración", 
             key='aplicar_comision_estructuracion_global',
             help="Si se marca, la comisión de estructuración se calculará sobre el capital total y se dividirá entre todas las facturas cargadas."
         )
+    with col2:
         st.number_input(
             "Comisión de Estructuración (%)",
             min_value=0.0,
@@ -390,6 +378,7 @@ if st.session_state.invoices_data:
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
         )
+    with col3:
         st.number_input(
             "Comisión Mínima (PEN)",
             min_value=0.0,
@@ -398,6 +387,7 @@ if st.session_state.invoices_data:
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
         )
+    with col4:
         st.number_input(
             "Comisión Mínima (USD)",
             min_value=0.0,
@@ -406,13 +396,17 @@ if st.session_state.invoices_data:
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
         )
-        
-        st.write("**Com. de Afiliación**")
+
+    # --- Comisión de Afiliación ---
+    st.write("##### Comisión de Afiliación")
+    col1, col2, col3 = st.columns(3)
+    with col1:
         st.checkbox(
             "Aplicar Comisión de Afiliación", 
             key='aplicar_comision_afiliacion_global',
             help="Si se marca, la comisión de afiliación se dividirá entre todas las facturas cargadas."
         )
+    with col2:
         st.number_input(
             "Monto Comisión Afiliación (PEN)",
             min_value=0.0,
@@ -421,6 +415,7 @@ if st.session_state.invoices_data:
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_afiliacion_global', False)
         )
+    with col3:
         st.number_input(
             "Monto Comisión Afiliación (USD)",
             min_value=0.0,
@@ -430,49 +425,17 @@ if st.session_state.invoices_data:
             disabled=not st.session_state.get('aplicar_comision_afiliacion_global', False)
         )
 
-    # --- COLUMNA 2: TASAS ---
-    with col2:
-        st.write("##### Tasas Globales")
-        st.write("---")
-        st.checkbox(
-            "Aplicar Tasa de Avance Global",
-            key='aplicar_tasa_avance_global',
-            help="Si se marca, la tasa de avance se aplicará a todas las facturas.",
-            on_change=handle_global_tasa_avance_change
-        )
-        st.number_input(
-            "Tasa de Avance Global (%)",
-            key='tasa_avance_global',
-            min_value=0.0,
-            format="%.2f",
-            disabled=not st.session_state.get('aplicar_tasa_avance_global', False),
-            on_change=handle_global_tasa_avance_change
-        )
-        st.checkbox(
-            "Aplicar Interés Mensual Global",
-            key='aplicar_interes_mensual_global',
-            help="Si se marca, el interés mensual se aplicará a todas las facturas.",
-            on_change=handle_global_interes_mensual_change
-        )
-        st.number_input(
-            "Interés Mensual Global (%)",
-            key='interes_mensual_global',
-            min_value=0.0,
-            format="%.2f",
-            disabled=not st.session_state.get('aplicar_interes_mensual_global', False),
-            on_change=handle_global_interes_mensual_change
-        )
-
-    # --- COLUMNA 3: FECHAS GLOBALES ---
-    with col3:
-        st.write("##### Fechas Globales")
-        st.write("---")
+    # --- Fecha de Pago Global ---
+    st.write("##### Fecha de Pago Global")
+    col1, col2 = st.columns([1.5, 1])
+    with col1:
         st.checkbox(
             "Aplicar Fecha de Pago Global",
             key='aplicar_fecha_vencimiento_global',
             help="Si se marca, la fecha de pago seleccionada se aplicará a todas las facturas.",
             on_change=handle_global_payment_date_change
         )
+    with col2:
         st.date_input(
             "Fecha de Pago Global",
             key='fecha_vencimiento_global',
@@ -480,12 +443,18 @@ if st.session_state.invoices_data:
             disabled=not st.session_state.get('aplicar_fecha_vencimiento_global', False),
             on_change=handle_global_payment_date_change
         )
+
+    # --- Fecha de Desembolso Global ---
+    st.write("##### Fecha de Desembolso Global")
+    col1, col2 = st.columns([1.5, 1])
+    with col1:
         st.checkbox(
             "Aplicar Fecha de Desembolso Global",
             key='aplicar_fecha_desembolso_global',
             help="Si se marca, la fecha de desembolso seleccionada se aplicará a todas las facturas.",
             on_change=handle_global_disbursement_date_change
         )
+    with col2:
         st.date_input(
             "Fecha de Desembolso Global",
             key='fecha_desembolso_global',
@@ -494,10 +463,45 @@ if st.session_state.invoices_data:
             on_change=handle_global_disbursement_date_change
         )
 
-        st.write("**Días Mínimos de Interés**")
-        st.checkbox("Aplicar Días Mínimos", key='aplicar_dias_interes_minimo_global', on_change=handle_global_min_interest_days_change)
-        st.number_input("Valor Días Mínimos", key='dias_interes_minimo_global', min_value=0, step=1, on_change=handle_global_min_interest_days_change)
+    # --- Tasa de Avance Global ---
+    st.write("##### Tasa de Avance Global")
+    col1, col2 = st.columns([1.5, 1])
+    with col1:
+        st.checkbox(
+            "Aplicar Tasa de Avance Global",
+            key='aplicar_tasa_avance_global',
+            help="Si se marca, la tasa de avance se aplicará a todas las facturas.",
+            on_change=handle_global_tasa_avance_change
+        )
+    with col2:
+        st.number_input(
+            "Tasa de Avance Global (%)",
+            key='tasa_avance_global',
+            min_value=0.0,
+            format="%.2f",
+            disabled=not st.session_state.get('aplicar_tasa_avance_global', False),
+            on_change=handle_global_tasa_avance_change
+        )
 
+    # --- Interés Mensual Global ---
+    st.write("##### Interés Mensual Global")
+    col1, col2 = st.columns([1.5, 1])
+    with col1:
+        st.checkbox(
+            "Aplicar Interés Mensual Global",
+            key='aplicar_interes_mensual_global',
+            help="Si se marca, el interés mensual se aplicará a todas las facturas.",
+            on_change=handle_global_interes_mensual_change
+        )
+    with col2:
+        st.number_input(
+            "Interés Mensual Global (%)",
+            key='interes_mensual_global',
+            min_value=0.0,
+            format="%.2f",
+            disabled=not st.session_state.get('aplicar_interes_mensual_global', False),
+            on_change=handle_global_interes_mensual_change
+        )
 
     # --- Cálculo Global ---
     st.write("##### Cálculo Global de Todas las Facturas")
@@ -516,41 +520,37 @@ if st.session_state.invoices_data:
             st.success("Todas las facturas son válidas. Iniciando cálculos...")
             for idx, invoice in enumerate(st.session_state.invoices_data):
                 with st.spinner(f"Calculando Factura {idx + 1}/{len(st.session_state.invoices_data)}..."):
+                    # This logic is copied and adapted from the individual 'Calcular' button
                     num_invoices = len(st.session_state.invoices_data)
                     
-                    # --- Lógica de Prorrateo ---
-                    comision_pen_apportioned = st.session_state.get('comision_afiliacion_pen_global', 0.0) / num_invoices if num_invoices > 0 else 0
-                    comision_usd_apportioned = st.session_state.get('comision_afiliacion_usd_global', 0.0) / num_invoices if num_invoices > 0 else 0
-                    comision_estructuracion_pct = st.session_state.comision_estructuracion_pct_global
-                    comision_min_pen_apportioned_struct = st.session_state.comision_estructuracion_min_pen_global / num_invoices if num_invoices > 0 else 0
-                    comision_min_usd_apportioned_struct = st.session_state.comision_estructuracion_min_usd_global / num_invoices if num_invoices > 0 else 0
+                    comision_pen_apportioned = 0.0
+                    comision_usd_apportioned = 0.0
+                    if st.session_state.get('aplicar_comision_afiliacion_global', False) and num_invoices > 0:
+                        comision_pen_apportioned = st.session_state.get('comision_afiliacion_pen_global', 0.0) / num_invoices
+                        comision_usd_apportioned = st.session_state.get('comision_afiliacion_usd_global', 0.0) / num_invoices
 
-                    # --- Lógica de Selección de Moneda (NUEVO) ---
-                    if invoice['moneda_factura'] == 'USD':
-                        comision_minima_aplicable = comision_min_usd_apportioned_struct
-                        comision_afiliacion_aplicable = comision_usd_apportioned
-                    else: # Default to PEN
-                        comision_minima_aplicable = comision_min_pen_apportioned_struct
-                        comision_afiliacion_aplicable = comision_pen_apportioned
+                    comision_estructuracion_pct = 0.0
+                    comision_min_pen_apportioned_struct = 0.0
+                    comision_min_usd_apportioned_struct = 0.0
+                    if st.session_state.get('aplicar_comision_estructuracion_global', False) and num_invoices > 0:
+                        comision_estructuracion_pct = st.session_state.comision_estructuracion_pct_global
+                        comision_min_pen_apportioned_struct = st.session_state.comision_estructuracion_min_pen_global / num_invoices
+                        comision_min_usd_apportioned_struct = st.session_state.comision_estructuracion_min_usd_global / num_invoices
 
-                    # --- Determinación del Plazo para la API (Lógica Actualizada) ---
-                    plazo_real = invoice.get('plazo_operacion_calculado', 0)
-                    plazo_para_api = plazo_real
-                    if st.session_state.get('aplicar_dias_interes_minimo_global', False):
-                        dias_minimos_a_usar = invoice.get('dias_minimos_interes_individual', 15)
-                        plazo_para_api = max(plazo_real, dias_minimos_a_usar)
-
-                    # --- Payload para /calcular_desembolso (ACTUALIZADO) ---
                     api_data = {
-                        "plazo_operacion": plazo_para_api,
+                        "plazo_operacion": invoice['plazo_operacion_calculado'],
                         "mfn": invoice['monto_neto_factura'],
                         "tasa_avance": invoice['tasa_de_avance'] / 100,
                         "interes_mensual": invoice['interes_mensual'] / 100,
                         "comision_estructuracion_pct": comision_estructuracion_pct / 100,
-                        "comision_minima_aplicable": comision_minima_aplicable,
+                        "moneda_factura": invoice['moneda_factura'],
+                        "comision_min_pen": comision_min_pen_apportioned_struct,
+                        "comision_min_usd": comision_min_usd_apportioned_struct,
                         "igv_pct": 0.18,
-                        "comision_afiliacion_aplicable": comision_afiliacion_aplicable,
-                        "aplicar_comision_afiliacion": st.session_state.get('aplicar_comision_afiliacion_global', False)
+                        "comision_afiliacion_valor": comision_pen_apportioned,
+                        "comision_afiliacion_usd_valor": comision_usd_apportioned,
+                        "aplicar_comision_afiliacion": st.session_state.get('aplicar_comision_afiliacion_global', False),
+                        "monto_desembolsar_manual": 0
                     }
                     try:
                         response = requests.post(f"{API_BASE_URL}/calcular_desembolso", json=api_data)
@@ -561,17 +561,19 @@ if st.session_state.invoices_data:
                             abono_real_teorico = invoice['initial_calc_result']['abono_real_teorico']
                             monto_desembolsar_objetivo = (abono_real_teorico // 10) * 10
 
-                            # --- Payload para /encontrar_tasa (ACTUALIZADO) ---
                             api_data_recalculate = {
-                                "plazo_operacion": plazo_para_api,
+                                "plazo_operacion": invoice['plazo_operacion_calculado'],
                                 "mfn": invoice['monto_neto_factura'],
                                 "interes_mensual": invoice['interes_mensual'] / 100,
                                 "comision_estructuracion_pct": comision_estructuracion_pct / 100,
+                                "moneda_factura": invoice['moneda_factura'],
+                                "comision_min_pen": comision_min_pen_apportioned_struct,
+                                "comision_min_usd": comision_min_usd_apportioned_struct,
                                 "igv_pct": 0.18,
-                                "monto_objetivo": monto_desembolsar_objetivo,
-                                "comision_minima_aplicable": comision_minima_aplicable,
-                                "comision_afiliacion_aplicable": comision_afiliacion_aplicable,
-                                "aplicar_comision_afiliacion": st.session_state.get('aplicar_comision_afiliacion_global', False)
+                                "comision_afiliacion_valor": comision_pen_apportioned,
+                                "comision_afiliacion_usd_valor": comision_usd_apportioned,
+                                "aplicar_comision_afiliacion": st.session_state.get('aplicar_comision_afiliacion_global', False),
+                                "monto_objetivo": monto_desembolsar_objetivo
                             }
                             response_recalculate = requests.post(f"{API_BASE_URL}/encontrar_tasa", json=api_data_recalculate)
                             response_recalculate.raise_for_status()
@@ -580,6 +582,7 @@ if st.session_state.invoices_data:
                             invoice['recalculate_result'] = None
                     except requests.exceptions.RequestException as e:
                         st.error(f"Error de conexión con la API para Factura {idx + 1}: {e}")
+                        # Stop further calculations if one fails
                         break 
             st.success("¡Cálculo de todas las facturas completado!")
 
@@ -635,7 +638,7 @@ if st.session_state.invoices_data:
                 except (ValueError, TypeError):
                     return None
 
-            col_fecha_emision, col_plazo_credito, col_fecha_pago, col_fecha_desembolso, col_plazo_operacion, col_dias_minimos = st.columns(6)
+            col_fecha_emision, col_plazo_credito, col_fecha_pago, col_fecha_desembolso, col_plazo_operacion = st.columns(5)
 
             with col_fecha_emision:
                 fecha_emision_obj = to_date_obj(invoice.get('fecha_emision_factura'))
@@ -681,6 +684,8 @@ if st.session_state.invoices_data:
                     st.session_state.invoices_data[idx]['fecha_desembolso_factoring'] = ''
                 update_date_calculations(st.session_state.invoices_data[idx])
 
+                        
+
             with col_plazo_credito:
                 plazo_value = invoice.get('plazo_credito_dias')
                 display_value = int(plazo_value) if plazo_value is not None else 0
@@ -718,9 +723,6 @@ if st.session_state.invoices_data:
 
             with col_plazo_operacion:
                 st.number_input("Plazo de Operación (días)", value=invoice.get('plazo_operacion_calculado', 0), disabled=True, key=f"plazo_operacion_calculado_{idx}", label_visibility="visible")
-            
-            with col_dias_minimos:
-                invoice['dias_minimos_interes_individual'] = st.number_input("Días Mín. Interés", value=invoice.get('dias_minimos_interes_individual', 15), min_value=0, step=1, key=f"dias_minimos_interes_individual_{idx}")
 
         # Tasas y Comisiones
         with st.container():
