@@ -1,19 +1,16 @@
-# 1. Initialize the Git repository in the Inandes.TECH directory
-git init
+# Comandos de Git para commit y push desde el directorio Inandes.TECH
+# Ejecutar estos comandos desde el directorio C:\Users\rguti\
 
-# 2. Stage all Python (.py) files
-git add *.py
+# 1. Asegurarse de estar en el directorio correcto y añadir solo los archivos .py
+#    (Este comando asume que ya estás en C:\Users\rguti\)
+cd Inandes.TECH && git add *.py
 
-# 3. Create a .gitignore file to exclude the venv directory
-echo "backend/venv/" > .gitignore
+# 2. Realizar el commit con el mensaje especificado
+cd Inandes.TECH && git commit -m "Refactorización de calculadora a agnóstica y actualización de UI - 20.08 11 PM"
 
-# 4. Unstage the venv directory, stage the .gitignore, and commit
-git rm -r --cached backend/venv
-git add .gitignore
-git commit -m "Initial commit of Python files, ignoring venv"
+# 3. Realizar el push forzado al repositorio remoto
+cd Inandes.TECH && git push --force
 
-# 5. Add the remote GitHub repository
-git remote add origin https://github.com/RichGutz/inandes-saas-app.git
-
-# 6. Push the local master branch to the remote origin
-git push -u origin master
+# NOTA: Los comandos de 'git init', 'git remote add' y '.gitignore'
+fueron omitidos ya que el repositorio ya existe y está configurado.
+# El 'push --force' se usó para sobrescribir el historial debido a una corrección.
