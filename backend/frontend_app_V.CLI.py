@@ -442,6 +442,7 @@ if st.session_state.invoices_data:
         )
         st.number_input(
             "Tasa de Avance Global (%)",
+            value=st.session_state.tasa_avance_global,
             key='tasa_avance_global',
             min_value=0.0,
             format="%.2f",
@@ -456,6 +457,7 @@ if st.session_state.invoices_data:
         )
         st.number_input(
             "Interés Mensual Global (%)",
+            value=st.session_state.interes_mensual_global,
             key='interes_mensual_global',
             min_value=0.0,
             format="%.2f",
@@ -496,7 +498,7 @@ if st.session_state.invoices_data:
 
         st.write("**Días Mínimos de Interés**")
         st.checkbox("Aplicar Días Mínimos", key='aplicar_dias_interes_minimo_global', on_change=handle_global_min_interest_days_change)
-        st.number_input("Valor Días Mínimos", key='dias_interes_minimo_global', min_value=0, step=1, on_change=handle_global_min_interest_days_change)
+        st.number_input("Valor Días Mínimos", value=st.session_state.dias_interes_minimo_global, key='dias_interes_minimo_global', min_value=0, step=1, on_change=handle_global_min_interest_days_change)
 
 
     # --- Cálculo Global ---
