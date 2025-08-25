@@ -3,13 +3,14 @@ import datetime
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import sys
+import json
 
 # Añadir el directorio 'backend' al path para importar flatten_dict
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.dirname(__file__))
 from variable_data_pdf_generator import flatten_dict
 
 # --- Conexión Segura a Supabase ---
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', 'supabase', '.env')
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', 'supabase_client', '.env')
 load_dotenv(dotenv_path=dotenv_path)
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -78,6 +79,7 @@ FLATTENED_TO_SUPABASE_MAPPING = {
     'recalculate_result.calculo_con_tasa_encontrada.comision_afiliacion': 'comision_afiliacion_monto_calculado',
     'recalculate_result.calculo_con_tasa_encontrada.igv_afiliacion': 'igv_afiliacion_calculado',
     'recalculate_result.calculo_con_tasa_encontrada.margen_seguridad': 'margen_seguridad_calculado',
+    'recalculate_result': 'recalculate_result_json',
     # 'recalculate_result.calculo_con_tasa_encontrada.abono_real': 'abono_real_calculado', # Si existe este campo en tu API
 }
 
@@ -118,20 +120,31 @@ def get_razon_social_by_ruc(ruc: str) -> str:
 def save_proposal(session_data: dict) -> tuple[bool, str]:
     """
     Guarda una propuesta completa en la tabla 'propuestas' de Supabase,
-    utilizando el aplanado de variables.
+    serializando los resultados completos de cálculo como JSON.
     """
     if not supabase:
         return False, "Error crítico: La conexión con Supabase no pudo ser establecida."
 
     try:
-        # 1. Aplanar todos los datos de la sesión
-        flattened_session_data = flatten_dict(session_data)
+        # Extraer y serializar los resultados completos de cálculo como JSON
+        recalculate_result_full = session_data.get('recalculate_result')
 
-        # 2. Construir el diccionario para insertar en Supabase
+        # Crear una copia de session_data para aplanar, excluyendo los objetos JSON completos
+        session_data_for_flattening = {k: v for k, v in session_data.items() if k not in ['recalculate_result']}
+        flattened_session_data = flatten_dict(session_data_for_flattening)
+
+        # Construir el diccionario para insertar en Supabase
         data_to_insert = {}
 
-        # Mapear campos directos y calculados
+        # Añadir los resultados JSON completos como strings
+        data_to_insert['recalculate_result_json'] = json.dumps(recalculate_result_full) if recalculate_result_full else None
+
+        # Mapear campos directos y calculados (desde los datos aplanados)
         for flattened_key, supabase_column_name in FLATTENED_TO_SUPABASE_MAPPING.items():
+            # Saltar las claves JSON completas ya que se manejan arriba
+            if flattened_key in ['recalculate_result']:
+                continue
+
             value = flattened_session_data.get(flattened_key)
             
             # Convertir tipos de datos según sea necesario
@@ -186,67 +199,34 @@ def save_proposal(session_data: dict) -> tuple[bool, str]:
 
 def get_proposal_details_by_id(proposal_id: str) -> dict:
     """
-    Recupera los detalles de una propuesta de factoring desde Supabase usando su proposal_id.
+    Recupera todos los detalles de una propuesta de factoring desde Supabase usando su proposal_id.
     """
     if not supabase:
         print("Error: La conexión con Supabase no está disponible.")
-        return {}
+        return {"error": "No hay conexión con Supabase"}
 
     try:
-        response = supabase.table('propuestas').select('*').eq('proposal_id', proposal_id).execute()
+        response = supabase.table('propuestas').select('*').eq('proposal_id', proposal_id).single().execute()
 
-        if response.data and len(response.data) > 0:
-            # Tomar el primer (y único esperado) resultado
-            proposal_data = response.data[0]
-            # Mapeo inverso para que coincida con los argumentos del CLI
-            details = {
-                'proposal_id': proposal_data.get('proposal_id', proposal_id), # Ensure proposal_id is always present
-                'invoice_issuer_name': proposal_data.get('emisor_nombre'),
-                'invoice_issuer_ruc': proposal_data.get('emisor_ruc'),
-                'invoice_issuer_address': proposal_data.get('emisor_direccion', 'N/A'),
-                'invoice_payer_name': proposal_data.get('aceptante_nombre'),
-                'invoice_payer_ruc': proposal_data.get('aceptante_ruc'),
-                'invoice_payer_address': proposal_data.get('aceptante_direccion', 'N/A'),
-                'invoice_series_and_number': proposal_data.get('numero_factura'),
-                'invoice_currency': proposal_data.get('moneda_factura'),
-                'invoice_total_amount': proposal_data.get('monto_total_factura'),
-                'invoice_issue_date': proposal_data.get('fecha_emision_factura'),
-                'invoice_due_date': proposal_data.get('fecha_pago_calculada'),
-                'advance_rate': proposal_data.get('tasa_de_avance'),
-                'advance_amount': proposal_data.get('capital_calculado'),
-                'commission_rate': proposal_data.get('comision_de_estructuracion'),
-                'commission_amount': proposal_data.get('comision_estructuracion_monto_calculado'),
-                'interes_calculado': proposal_data.get('interes_calculado'),
-                'igv_interes_calculado': proposal_data.get('igv_interes_calculado'),
-                'initial_disbursement': proposal_data.get('abono_real_calculado'),
-                'financing_term_days': proposal_data.get('plazo_operacion_calculado'),
-                'tcea': proposal_data.get('tcea_calculada', 0.0),
-                'margen_seguridad_calculado': proposal_data.get('margen_seguridad_calculado', 0.0),
-                'investor_name': proposal_data.get('nombre_inversionista', 'INANDES CAPITAL S.A.C.'),
-                'aplicar_comision_afiliacion': proposal_data.get('aplicar_comision_afiliacion', False),
-                'comision_afiliacion_monto_calculado': proposal_data.get('comision_afiliacion_monto_calculado'),
-                'igv_afiliacion_calculado': proposal_data.get('igv_afiliacion_calculado'),
-                'detraccion_porcentaje': round(proposal_data.get('detraccion_porcentaje', 0.0), 2),
-                'anexo_number': proposal_data.get('anexo_number', ''),
-                'contract_number': proposal_data.get('contract_number', ''),
-            }
-
-            # Formatear fechas de YYYY-MM-DD a DD-MM-YYYY
-            for key in ['invoice_issue_date', 'invoice_due_date']:
-                if details[key] and isinstance(details[key], str):
+        if response.data:
+            proposal_data = response.data
+            
+            # Formatear las fechas de YYYY-MM-DD a DD-MM-YYYY para consistencia
+            for key in ['fecha_emision_factura', 'fecha_pago_calculada', 'fecha_desembolso_factoring']:
+                if proposal_data.get(key) and isinstance(proposal_data[key], str):
                     try:
-                        details[key] = datetime.datetime.strptime(details[key], '%Y-%m-%d').strftime('%d-%m-%Y')
+                        proposal_data[key] = datetime.datetime.strptime(proposal_data[key], '%Y-%m-%d').strftime('%d-%m-%Y')
                     except ValueError:
-                        # Si ya está en el formato correcto o es inválido, dejarlo como está
+                        # Si el formato ya es correcto o es inválido, se deja como está
                         pass
-            return details
+            return proposal_data
         else:
             print(f"No se encontró ninguna propuesta con el ID: {proposal_id}")
-            return {'proposal_id': proposal_id} # Return with proposal_id even if not found
+            return {"error": f"No se encontró la propuesta con ID {proposal_id}"}
 
     except Exception as e:
         print(f"[ERROR en get_proposal_details_by_id]: {e}")
-        return {'proposal_id': proposal_id} # Return with proposal_id on error
+        return {"error": f"Error de base de datos al buscar la propuesta: {e}"}
 
 def get_active_proposals_by_emisor_nombre(emisor_nombre: str) -> list[dict]:
     """

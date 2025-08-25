@@ -1,6 +1,9 @@
 
+
+
 import datetime
 import math
+import json
 
 def calcular_desembolso_inicial(
     plazo_operacion: int,
@@ -14,8 +17,50 @@ def calcular_desembolso_inicial(
     aplicar_comision_afiliacion: bool = False
 ) -> dict:
     """
-    Calcula los detalles de una operación de factoring basándose en una tasa de avance fija.
-    Es agnóstico a la moneda; requiere que las comisiones correctas ya vengan en el payload.
+    Función adaptadora para mantener compatibilidad con interfaces antiguas (como Streamlit)
+    que envían una factura a la vez.
+    """
+    # 1. Empaquetar los argumentos de la factura individual en un diccionario.
+    datos_factura = {
+        "plazo_operacion": plazo_operacion,
+        "mfn": mfn,
+        "tasa_avance": tasa_avance,
+        "interes_mensual": interes_mensual,
+        "comision_estructuracion_pct": comision_estructuracion_pct,
+        "comision_minima_aplicable": comision_minima_aplicable,
+        "igv_pct": igv_pct,
+        "comision_afiliacion_aplicable": comision_afiliacion_aplicable,
+        "aplicar_comision_afiliacion": aplicar_comision_afiliacion
+    }
+
+    # 2. Convertir la factura individual en un lote de una sola factura.
+    lote_de_una_factura = [datos_factura]
+
+    # 3. Llamar a la nueva función de procesamiento de lotes.
+    resultado_lote = procesar_lote_desembolso_inicial(lote_de_una_factura)
+
+    # 4. Extraer y devolver el resultado de la única factura del lote.
+    if resultado_lote and resultado_lote.get("resultados_por_factura"):
+        return resultado_lote["resultados_por_factura"][0]
+    else:
+        # Devuelve el error que pudo haber generado la función de lote
+        return resultado_lote if isinstance(resultado_lote, dict) and "error" in resultado_lote else {
+            "error": "El cálculo para el lote no produjo resultados."
+        }
+
+def _calcular_desglose_factura(
+    plazo_operacion: int,
+    mfn: float,
+    tasa_avance: float,
+    interes_mensual: float,
+    comision_estructuracion_fija: float, # Ya no se calcula con MAX, se recibe el valor final
+    igv_pct: float,
+    comision_afiliacion_aplicable: float = 0.0,
+    aplicar_comision_afiliacion: bool = False
+) -> dict:
+    """
+    Calcula los detalles de una operación de factoring para UNA factura.
+    Esta es una función auxiliar que asume que la lógica de comisión ya fue resuelta.
     """
     if plazo_operacion < 0:
         return {"error": "El plazo de operación no puede ser negativo."}
@@ -26,8 +71,8 @@ def calcular_desembolso_inicial(
     interes = capital * (((1 + tasa_diaria) ** plazo_operacion) - 1)
     igv_interes = interes * igv_pct
 
-    comision_estructuracion_base = capital * comision_estructuracion_pct
-    comision_estructuracion = max(comision_estructuracion_base, comision_minima_aplicable)
+    # La comisión de estructuración ahora es un valor fijo que se pasa como argumento
+    comision_estructuracion = comision_estructuracion_fija
     igv_comision = comision_estructuracion * igv_pct
 
     abono_real_teorico = capital - interes - igv_interes - comision_estructuracion - igv_comision
@@ -56,6 +101,68 @@ def calcular_desembolso_inicial(
         "plazo_operacion": plazo_operacion
     }
 
+def procesar_lote_desembolso_inicial(lote_datos: list) -> dict:
+    """
+    Orquesta el cálculo del desembolso para un lote de facturas,
+    aplicando la lógica de comisión agregada y corrigiendo el total por redondeo.
+    """
+    if not lote_datos:
+        return {"error": "El lote de datos no puede estar vacío."}
+
+    # --- FASE 1: Decisión Agregada sobre la Comisión ---
+    capital_total_agregado = 0
+    comision_prorrateada_total = 0
+    
+    parametros_generales = lote_datos[0]
+    comision_estructuracion_pct = parametros_generales.get("comision_estructuracion_pct", 0)
+    
+    for datos_factura in lote_datos:
+        capital_individual = datos_factura.get("mfn", 0) * datos_factura.get("tasa_avance", 0)
+        capital_total_agregado += capital_individual
+        comision_prorrateada_total += datos_factura.get("comision_minima_aplicable", 0)
+
+    comision_porcentual_agregada = capital_total_agregado * comision_estructuracion_pct
+
+    if comision_porcentual_agregada > comision_prorrateada_total:
+        metodo_de_comision_elegido = "PORCENTAJE"
+    else:
+        metodo_de_comision_elegido = "PRORRATEADO"
+
+    # --- FASE 2: Cálculo Individual con la Decisión ya Tomada ---
+    resultados_finales = []
+    for datos_factura in lote_datos:
+        capital_individual = datos_factura.get("mfn", 0) * datos_factura.get("tasa_avance", 0)
+        
+        if metodo_de_comision_elegido == "PORCENTAJE":
+            comision_para_esta_factura = capital_individual * comision_estructuracion_pct
+        else: # PRORRATEADO
+            comision_para_esta_factura = datos_factura.get("comision_minima_aplicable", 0)
+            
+        resultado_factura = _calcular_desglose_factura(
+            plazo_operacion=datos_factura.get("plazo_operacion"),
+            mfn=datos_factura.get("mfn"),
+            tasa_avance=datos_factura.get("tasa_avance"),
+            interes_mensual=datos_factura.get("interes_mensual"),
+            comision_estructuracion_fija=comision_para_esta_factura,
+            igv_pct=datos_factura.get("igv_pct"),
+            comision_afiliacion_aplicable=datos_factura.get("comision_afiliacion_aplicable", 0),
+            aplicar_comision_afiliacion=datos_factura.get("aplicar_comision_afiliacion", False)
+        )
+        resultados_finales.append(resultado_factura)
+        
+    # --- FASE 3: Corrección de Totales por Redondeo ---
+    if metodo_de_comision_elegido == "PRORRATEADO":
+        total_comision_corregido = comision_prorrateada_total
+    else:
+        total_comision_corregido = sum(c['comision_estructuracion'] for c in resultados_finales)
+
+    return {
+        "metodo_comision_elegido": metodo_de_comision_elegido,
+        "comision_estructuracion_total_corregida": round(total_comision_corregido, 2),
+        "resultados_por_factura": resultados_finales
+    }
+
+
 def encontrar_tasa_de_avance(
     plazo_operacion: int,
     mfn: float,
@@ -73,6 +180,8 @@ def encontrar_tasa_de_avance(
     max_iteraciones: int = 100
 ) -> dict:
     """
+    (NOTA: Esta función aún contiene la lógica de comisión individual y necesita ser refactorizada
+    de manera similar a 'procesar_lote_desembolso_inicial' para funcionar por lotes.)
     Encuentra la tasa de avance necesaria para un monto objetivo, usando la lógica de doble cálculo agnóstica.
     """
     valor_neto_real = mfn
@@ -153,60 +262,33 @@ def encontrar_tasa_de_avance(
     }
 
 if __name__ == '__main__':
-    # --- Prueba en PEN ---
-    print("---" + " PRUEBA EN SOLES (PEN) " + "---")
-    datos_prueba_pen = {
-        "plazo_operacion": 53,
-        "mfn": 8178.82,
-        "tasa_avance": 0.98,
-        "interes_mensual": 0.0125,
-        "comision_estructuracion_pct": 0.005,
-        "comision_minima_aplicable": 10.0, # Valor PEN
-        "igv_pct": 0.18,
-        "comision_afiliacion_aplicable": 200.0, # Valor PEN
-        "aplicar_comision_afiliacion": True
-    }
-    resultado_inicial_pen = calcular_desembolso_inicial(**datos_prueba_pen)
-    print(f"[PEN] Abono Teórico Inicial: {resultado_inicial_pen.get('abono_real_teorico')}")
-    
-    monto_objetivo_pen = math.floor(resultado_inicial_pen.get('abono_real_teorico', 0) / 10) * 10
-    print(f"[PEN] Monto Objetivo Redondeado: {monto_objetivo_pen}")
+    # --- CASO 1: Prueba donde gana el método PORCENTAJE ---
+    print("--- CASO 1: GANA MÉTODO PORCENTAJE ---")
+    lote_caso_1 = [
+        {"plazo_operacion": 98, "mfn": 18795.09, "tasa_avance": 0.95, "interes_mensual": 0.02, "comision_estructuracion_pct": 0.015, "comision_minima_aplicable": 66.67, "igv_pct": 0.18},
+        {"plazo_operacion": 98, "mfn": 7941.47, "tasa_avance": 0.95, "interes_mensual": 0.02, "comision_estructuracion_pct": 0.015, "comision_minima_aplicable": 66.67, "igv_pct": 0.18},
+        {"plazo_operacion": 98, "mfn": 5507.67, "tasa_avance": 0.95, "interes_mensual": 0.02, "comision_estructuracion_pct": 0.015, "comision_minima_aplicable": 66.66, "igv_pct": 0.18}
+    ]
+    resultado_lote_1 = procesar_lote_desembolso_inicial(lote_caso_1)
+    print(f"Método Elegido: {resultado_lote_1['metodo_comision_elegido']}")
+    comisiones_1 = [r['comision_estructuracion'] for r in resultado_lote_1['resultados_por_factura']]
+    print(f"Comisiones Individuales: {comisiones_1}")
+    print(f"Suma de Comisiones Individuales: {round(sum(comisiones_1), 2)}")
+    print(f"TOTAL OFICIAL CORREGIDO: {resultado_lote_1['comision_estructuracion_total_corregida']}")
 
-    datos_busqueda_pen = {
-        k: v for k, v in datos_prueba_pen.items() if k != 'tasa_avance'
-    }
-    datos_busqueda_pen["monto_objetivo"] = monto_objetivo_pen
-    
-    resultado_final_pen = encontrar_tasa_de_avance(**datos_busqueda_pen)
-    import json
-    print("[PEN] Resultado Final:")
-    print(json.dumps(resultado_final_pen, indent=4))
+    # --- CASO 2: Prueba donde gana el método PRORRATEADO (para probar el ajuste de redondeo) ---
+    print("\n--- CASO 2: GANA MÉTODO PRORRATEADO ---")
+    lote_caso_2 = [
+        {"plazo_operacion": 98, "mfn": 1000, "tasa_avance": 0.90, "interes_mensual": 0.02, "comision_estructuracion_pct": 0.01, "comision_minima_aplicable": 66.67, "igv_pct": 0.18},
+        {"plazo_operacion": 98, "mfn": 1000, "tasa_avance": 0.90, "interes_mensual": 0.02, "comision_estructuracion_pct": 0.01, "comision_minima_aplicable": 66.67, "igv_pct": 0.18},
+        {"plazo_operacion": 98, "mfn": 1000, "tasa_avance": 0.90, "interes_mensual": 0.02, "comision_estructuracion_pct": 0.01, "comision_minima_aplicable": 66.66, "igv_pct": 0.18}
+    ]
+    resultado_lote_2 = procesar_lote_desembolso_inicial(lote_caso_2)
+    print(f"Método Elegido: {resultado_lote_2['metodo_comision_elegido']}")
+    comisiones_2 = [r['comision_estructuracion'] for r in resultado_lote_2['resultados_por_factura']]
+    print(f"Comisiones Individuales: {comisiones_2}")
+    print(f"Suma de Comisiones Individuales (potencialmente con error): {round(sum(comisiones_2), 2)}")
+    print(f"TOTAL OFICIAL CORREGIDO: {resultado_lote_2['comision_estructuracion_total_corregida']}")
 
-    # --- Prueba en USD ---
-    print("\n" + "---" + " PRUEBA EN DÓLARES (USD) " + "---")
-    datos_prueba_usd = {
-        "plazo_operacion": 10, # Menos de 15 para probar la regla
-        "mfn": 5000.00,
-        "tasa_avance": 0.97,
-        "interes_mensual": 0.0125,
-        "comision_estructuracion_pct": 0.005,
-        "comision_minima_aplicable": 3.0, # Valor USD
-        "igv_pct": 0.18,
-        "comision_afiliacion_aplicable": 50.0, # Valor USD
-        "aplicar_comision_afiliacion": True
-    }
-    resultado_inicial_usd = calcular_desembolso_inicial(**datos_prueba_usd)
-    print(f"[USD] Abono Teórico Inicial: {resultado_inicial_usd.get('abono_real_teorico')}")
-    
-    monto_objetivo_usd = math.floor(resultado_inicial_usd.get('abono_real_teorico', 0) / 10) * 10
-    print(f"[USD] Monto Objetivo Redondeado: {monto_objetivo_usd}")
 
-    datos_busqueda_usd = {
-        k: v for k, v in datos_prueba_usd.items() if k != 'tasa_avance'
-    }
-    datos_busqueda_usd["monto_objetivo"] = monto_objetivo_usd
-    
-    resultado_final_usd = encontrar_tasa_de_avance(**datos_busqueda_usd)
-    print("[USD] Resultado Final:")
-    print(json.dumps(resultado_final_usd, indent=4))
 
