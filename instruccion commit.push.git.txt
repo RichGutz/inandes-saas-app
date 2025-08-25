@@ -1,16 +1,27 @@
-# Comandos de Git para commit y push desde el directorio Inandes.TECH
-# Ejecutar estos comandos desde el directorio C:\Users\rguti\
+Instrucciones Precisas para Commit y Push en el Repositorio Inandes.TECH
 
-# 1. Asegurarse de estar en el directorio correcto y añadir solo los archivos .py
-#    (Este comando asume que ya estás en C:\Users\rguti\)
-cd Inandes.TECH && git add *.py
+Este documento detalla los comandos exactos y el contexto necesario para realizar operaciones de Git (commit y push) en el repositorio 'Inandes.TECH'.
 
-# 2. Realizar el commit con el mensaje especificado
-cd Inandes.TECH && git commit -m "Refactorización de calculadora a agnóstica y actualización de UI - 20.08 11 PM"
+Contexto Importante:
+- El directorio raíz del proyecto (donde se ejecuta el agente Gemini) es: C:\Users\rguti\
+- El repositorio Git para este proyecto se encuentra en: C:\Users\rguti\Inandes.TECH\
 
-# 3. Realizar el push forzado al repositorio remoto
-cd Inandes.TECH && git push --force
+Pasos para Realizar Commit y Push (solo archivos .py):
 
-# NOTA: Los comandos de 'git init', 'git remote add' y '.gitignore'
-fueron omitidos ya que el repositorio ya existe y está configurado.
-# El 'push --force' se usó para sobrescribir el historial debido a una corrección.
+1.  **Añadir archivos .py al área de staging:**
+    Este comando cambia temporalmente el directorio de trabajo a 'Inandes.TECH' y añade todos los archivos con extensión '.py' al área de staging de Git.
+    `cd Inandes.TECH && git add *.py`
+
+2.  **Realizar el commit de los cambios:**
+    Este comando cambia temporalmente el directorio de trabajo a 'Inandes.TECH' y crea un nuevo commit con los archivos staged.
+    **IMPORTANTE:** Reemplaza "Tu mensaje de commit aquí" con un mensaje descriptivo de tus cambios.
+    `cd Inandes.TECH && git commit -m "Tu mensaje de commit aquí"`
+
+3.  **Subir los cambios al repositorio remoto (push):**
+    Este comando cambia temporalmente el directorio de trabajo a 'Inandes.TECH' y sube los commits locales al repositorio remoto.
+    `cd Inandes.TECH && git push`
+
+Consideraciones Adicionales:
+-   Estos comandos asumen que ya estás autenticado con tu repositorio remoto (por ejemplo, GitHub).
+-   Si necesitas añadir otros tipos de archivos, ajusta el patrón `*.py` según sea necesario (ej. `git add .` para añadir todos los cambios).
+-   Si encuentras errores relacionados con "not a git repository", asegúrate de que el directorio `C:\Users\rguti\Inandes.TECH` contenga la carpeta `.git`.
