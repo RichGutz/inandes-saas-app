@@ -8,9 +8,14 @@ Contexto Importante:
 
 Pasos para Realizar Commit y Push (solo archivos .py):
 
-1.  **Añadir archivos .py al área de staging:**
-    Este comando cambia temporalmente el directorio de trabajo a 'Inandes.TECH' y añade todos los archivos con extensión '.py' al área de staging de Git.
-    `cd Inandes.TECH && git add *.py`
+1.  **Añadir archivos al área de staging:**
+    Este comando cambia temporalmente el directorio de trabajo a 'Inandes.TECH' y añade los archivos especificados al área de staging de Git.
+    -   Para añadir todos los archivos Python:
+        `cd Inandes.TECH && git add *.py`
+    -   Para añadir un archivo específico (especialmente si el nombre contiene espacios, usa comillas):
+        `cd Inandes.TECH && git add "nombre del archivo.txt"`
+    -   Para añadir todos los cambios (archivos nuevos, modificados y eliminados):
+        `cd Inandes.TECH && git add .`
 
 2.  **Realizar el commit de los cambios:**
     Este comando cambia temporalmente el directorio de trabajo a 'Inandes.TECH' y crea un nuevo commit con los archivos staged.
